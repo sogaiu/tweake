@@ -56,7 +56,8 @@
   (assertf (all |(or (keyword? $) (nat? $) (tuple? $)) path)
            "detected other than keywords, natural numbers, or tuples: %n" path)
   #
-  (assertf (parse value-str) "could not parse: %n" value-str)
+  (when (not= "nil" value-str)
+    (assertf (parse value-str) "could not parse: %n" value-str))
   #
   (array/remove the-args 0)
   (array/remove the-args 0)

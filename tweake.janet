@@ -59,7 +59,8 @@
   (assertf (all |(or (keyword? $) (nat? $) (tuple? $)) path)
            "detected other than keywords, natural numbers, or tuples: %n" path)
   #
-  (assertf (parse value-str) "could not parse: %n" value-str)
+  (when (not= "nil" value-str)
+    (assertf (parse value-str) "could not parse: %n" value-str))
   #
   (array/remove the-args 0)
   (array/remove the-args 0)
@@ -2378,7 +2379,7 @@
 
 
 
-(def version "2026-03-24_02-04-21")
+(def version "2026-03-24_03-42-40")
 
 (def usage
   `````
@@ -2502,8 +2503,11 @@
     (cond
       (or (keyword? step) (nat? step))
       (do
+        (def new-context (get context step))
+        (assertf new-context "failed to take a step: %n in context: %n"
+                 step context)
         (array/push new-path step)
-        (set context (get context step)))
+        (set context new-context))
       #
       (function? step)
       (do

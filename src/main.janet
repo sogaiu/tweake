@@ -125,8 +125,11 @@
     (cond
       (or (keyword? step) (nat? step))
       (do
+        (def new-context (get context step))
+        (assertf new-context "failed to take a step: %n in context: %n"
+                 step context)
         (array/push new-path step)
-        (set context (get context step)))
+        (set context new-context))
       #
       (function? step)
       (do
