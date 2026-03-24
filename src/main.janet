@@ -11,7 +11,7 @@
 
          tweake [-h|--help]|[-v|--version]
 
-  Modify and display `.jdn` content [1].
+  Slightly modify and display JDN content [1].
 
   Parameters:
 

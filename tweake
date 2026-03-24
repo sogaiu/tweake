@@ -2707,7 +2707,7 @@
 (comment import ./jipper :prefix "")
 
 
-(def version "2026-03-24_04-08-01")
+(def version "2026-03-24_04-10-48")
 
 (def usage
   `````
@@ -2716,7 +2716,7 @@
 
          tweake [-h|--help]|[-v|--version]
 
-  Modify and display `.jdn` content [1].
+  Slightly modify and display JDN content [1].
 
   Parameters:
 
