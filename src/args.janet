@@ -53,8 +53,12 @@
   #      because the parser "expands" this to:
   #
   #        (short-fn (= (get $ :name) "niche"))
-  (assertf (all |(or (keyword? $) (nat? $) (tuple? $)) path)
-           "detected other than keywords, natural numbers, or tuples: %n" path)
+  #
+  # XXX: only the first item in the path should be allowed to be
+  #      a symbol, and if it is, it needs to start with @
+  (assertf (all |(or (keyword? $) (nat? $) (tuple? $) (symbol? $))
+                path)
+           "only keywords, natural numbers, tuples, symbols: %n" path)
   #
   (when (not= "nil" value-str)
     (assertf (parse value-str) "could not parse: %n" value-str))
@@ -62,10 +66,18 @@
   (array/remove the-args 0)
   (array/remove the-args 0)
   #
+  (def top-level-index
+    (let [first-step (get path 0)]
+      (if (and (symbol? first-step)
+               (string/has-prefix? "@" (slice first-step 0 1)))
+        (scan-number (slice first-step 1))
+        0)))
+  #
   (merge opts
          {:input input
+          :top-level-index top-level-index
           # XXX: is this `eval` use likely to be a problem?
-          :path (eval path)
+          :path (eval (slice path 1))
           :value-str value-str
           :rest the-args}))
 

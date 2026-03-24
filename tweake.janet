@@ -56,8 +56,12 @@
   #      because the parser "expands" this to:
   #
   #        (short-fn (= (get $ :name) "niche"))
-  (assertf (all |(or (keyword? $) (nat? $) (tuple? $)) path)
-           "detected other than keywords, natural numbers, or tuples: %n" path)
+  #
+  # XXX: only the first item in the path should be allowed to be
+  #      a symbol, and if it is, it needs to start with @
+  (assertf (all |(or (keyword? $) (nat? $) (tuple? $) (symbol? $))
+                path)
+           "only keywords, natural numbers, tuples, symbols: %n" path)
   #
   (when (not= "nil" value-str)
     (assertf (parse value-str) "could not parse: %n" value-str))
@@ -65,10 +69,18 @@
   (array/remove the-args 0)
   (array/remove the-args 0)
   #
+  (def top-level-index
+    (let [first-step (get path 0)]
+      (if (and (symbol? first-step)
+               (string/has-prefix? "@" (slice first-step 0 1)))
+        (scan-number (slice first-step 1))
+        0)))
+  #
   (merge opts
          {:input input
+          :top-level-index top-level-index
           # XXX: is this `eval` use likely to be a problem?
-          :path (eval path)
+          :path (eval (slice path 1))
           :value-str value-str
           :rest the-args}))
 
@@ -2707,7 +2719,7 @@
 (comment import ./jipper :prefix "")
 
 
-(def version "2026-03-24_05-03-16")
+(def version "2026-03-24_05-37-45")
 
 (def usage
   `````
@@ -2770,34 +2782,19 @@
 ########################################################################
 
 (defn tweak
-  [src path value-str]
+  [src top-level-index path value-str]
   # check source string
   (def [ok? data] (protect (parse-all src)))
   (when (not ok?)
     (errorf "failed to parse content"))
-  #
-  (var skip 0)
-  # adjust data and path depending on number of top-level items
-  (def [mod-data mod-path]
-    (cond
-      (= 1 (length data))
-      [(get data 0) path]
-      #
-      (let [first-step (get path 0)]
-        (assertf (and (nat? first-step)
-                      (<= 0 first-step (dec (length data))))
-                 (string "number of top-level data detected > 1: %d\n"
-                         "first element of path not a natural number")
-                 (length data))
-        (set skip first-step)
-        [(get data first-step) (slice path 1)])))
   # non-zipper traversal to learn various things
-  (def [value new-path] (g/get-via-path mod-data mod-path))
+  (def [value new-path]
+    (g/get-via-path (get data top-level-index) path))
   # prepare zipper for zipper traversal
   (def zloc (-> src j/par j/zip-down))
   (var cur-zloc zloc)
   # if needed, skip to appropriate top-level item
-  (repeat skip
+  (repeat top-level-index
     (set cur-zloc (j/right-skip-wsc cur-zloc)))
   # traverse the path, one step at a time
   (each step new-path
@@ -2818,7 +2815,7 @@
 
 (comment
 
-  (tweak `{:key "value"}` [:key] `"lock"`)
+  (tweak `{:key "value"}` 0 [:key] `"lock"`)
   # =>
   `{:key "lock"}`
 
@@ -2830,7 +2827,7 @@
       :value 2}]
     ``)
 
-  (tweak src [0 :value] `11`)
+  (tweak src 0 [0 :value] `11`)
   # =>
   ``
   [{:name "alice"
@@ -2839,7 +2836,7 @@
     :value 2}]
   ``
 
-  (tweak src [|(= (get $ :name) "bob") :value] `11`)
+  (tweak src 0 [|(= (get $ :name) "bob") :value] `11`)
   # =>
   ``
   [{:name "alice"
@@ -2851,32 +2848,32 @@
   (def project-janet-src
     ``
     (declare-project
-       :name "janet-peg"
-       :url "https://github.com/sogaiu/janet-peg")
+      :name "janet-peg"
+      :url "https://github.com/sogaiu/janet-peg")
 
     (declare-source
       :prefix "janet-peg"
       :source @["lib"])
     ``)
 
-  (tweak project-janet-src [1 2] `"janet-pegs"`)
+  (tweak project-janet-src 1 [2] `"janet-pegs"`)
   # =>
   ``
   (declare-project
-     :name "janet-peg"
-     :url "https://github.com/sogaiu/janet-peg")
+    :name "janet-peg"
+    :url "https://github.com/sogaiu/janet-peg")
 
   (declare-source
     :prefix "janet-pegs"
     :source @["lib"])
   ``
 
-  (tweak project-janet-src [1] `nil`)
+  (tweak project-janet-src 1 [] `nil`)
   # =>
   ``
   (declare-project
-     :name "janet-peg"
-     :url "https://github.com/sogaiu/janet-peg")
+    :name "janet-peg"
+    :url "https://github.com/sogaiu/janet-peg")
 
   nil
   ``
@@ -2896,6 +2893,7 @@
     (os/exit 0))
   #
   (def input (get opts :input))
+  (def top-level-index (get opts :top-level-index))
   (def path (get opts :path))
   (def value-str (get opts :value-str))
   #
@@ -2905,7 +2903,7 @@
   (when (not ok?)
     (errorf "failed to read in: %s" input))
   #
-  (def new-src (tweak src path value-str))
+  (def new-src (tweak src top-level-index path value-str))
   #
   (print new-src))
 
