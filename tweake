@@ -73,14 +73,17 @@
     (let [first-step (get path 0)]
       (if (and (symbol? first-step)
                (string/has-prefix? "@" (slice first-step 0 1)))
-        (scan-number (slice first-step 1))
+        (let [scanned (scan-number (slice first-step 1))]
+          (if (number? scanned)
+            scanned
+            nil))
         0)))
   #
   (merge opts
          {:input input
           :top-level-index top-level-index
           # XXX: is this `eval` use likely to be a problem?
-          :path (eval (slice path 1))
+          :path (eval (tuple/brackets ;(slice path 1)))
           :value-str value-str
           :rest the-args}))
 
@@ -2719,7 +2722,7 @@
 (comment import ./jipper :prefix "")
 
 
-(def version "2026-03-24_05-37-45")
+(def version "2026-03-24_06-54-32")
 
 (def usage
   `````
@@ -2787,14 +2790,42 @@
   (def [ok? data] (protect (parse-all src)))
   (when (not ok?)
     (errorf "failed to parse content"))
+  #
+  (var tl-idx nil)
+  (def top-level-item
+    (if (nat? top-level-index)
+      (get data top-level-index)
+      (let [first-step (get path 0)]
+        (assertf (function? first-step)
+                 "first item of path should be a function: %n"
+                 first-step)
+        (var capture nil)
+        (eachp [i elt] data
+          (when (first-step elt)
+            (set tl-idx i)
+            (set capture elt)
+            (break)))
+        (when (nil? capture)
+          (errorf "failed to find target top-level item: %n"
+                  data))
+        #
+        capture)))
+  (assertf top-level-item
+           "failed to determine top-level item for: %n" data)
+  #
+  (def mod-path (if tl-idx (slice path 1) path))
+  (set tl-idx (cond
+                (nat? top-level-index) top-level-index
+                (nat? tl-idx) tl-idx
+                (errorf "failed to determine top-level index")))
   # non-zipper traversal to learn various things
   (def [value new-path]
-    (g/get-via-path (get data top-level-index) path))
+    (g/get-via-path top-level-item mod-path))
   # prepare zipper for zipper traversal
   (def zloc (-> src j/par j/zip-down))
   (var cur-zloc zloc)
   # if needed, skip to appropriate top-level item
-  (repeat top-level-index
+  (repeat tl-idx
     (set cur-zloc (j/right-skip-wsc cur-zloc)))
   # traverse the path, one step at a time
   (each step new-path
@@ -2869,6 +2900,19 @@
   ``
 
   (tweak project-janet-src 1 [] `nil`)
+  # =>
+  ``
+  (declare-project
+    :name "janet-peg"
+    :url "https://github.com/sogaiu/janet-peg")
+
+  nil
+  ``
+
+  (tweak project-janet-src
+         nil
+         [|(= (get $ 0) 'declare-source)]
+         `nil`)
   # =>
   ``
   (declare-project

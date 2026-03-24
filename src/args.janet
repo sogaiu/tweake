@@ -70,14 +70,17 @@
     (let [first-step (get path 0)]
       (if (and (symbol? first-step)
                (string/has-prefix? "@" (slice first-step 0 1)))
-        (scan-number (slice first-step 1))
+        (let [scanned (scan-number (slice first-step 1))]
+          (if (number? scanned)
+            scanned
+            nil))
         0)))
   #
   (merge opts
          {:input input
           :top-level-index top-level-index
           # XXX: is this `eval` use likely to be a problem?
-          :path (eval (slice path 1))
+          :path (eval (tuple/brackets ;(slice path 1)))
           :value-str value-str
           :rest the-args}))
 
