@@ -66,26 +66,49 @@
 
 (defn tweak
   [src path new-value-str]
-  (def data (parse-all src))
-  (when (<= 2 (length data))
-    (errorf "only supports one top-level piece of data atm"))
+  # check source string
+  (def [ok? data] (protect (parse-all src)))
+  (when (not ok?)
+    (errorf "failed to parse content"))
   #
-  (def [value new-path] (g/get-via-path (get data 0) path))
-  #
+  (var skip 0)
+  # adjust data and path depending on number of top-level items
+  (def [mod-data mod-path]
+    (cond
+      (= 1 (length data))
+      [(get data 0) path]
+      #
+      (let [first-step (get path 0)]
+        (assertf (and (nat? first-step)
+                      (<= 0 first-step (dec (length data))))
+                 (string "number of top-level data detected > 1: %d\n"
+                         "first element of path not a natural number")
+                 (length data))
+        (set skip first-step)
+        [(get data first-step) (slice path 1)])))
+  # non-zipper traversal to learn various things
+  (def [value new-path] (g/get-via-path mod-data mod-path))
+  # prepare zipper for zipper traversal
   (def zloc (-> src j/par j/zip-down))
   (var cur-zloc zloc)
+  # if needed, skip to appropriate top-level item
+  (repeat skip
+    (set cur-zloc (j/right-skip-wsc cur-zloc)))
+  # traverse the path, one step at a time
   (each step new-path
     (set cur-zloc (g/get-via cur-zloc step)))
   (when (nil? cur-zloc)
     (errorf "unexpected nil value for current location"))
   #
+  # prepare replacement
   (def found-value-str (j/gen (j/node cur-zloc)))
   (assertf (= value (parse found-value-str))
            "expected: %n, but found: %n" value (parse found-value-str))
   #
   (def v-zloc (-> new-value-str j/par j/zip-down))
+  # replace
   (def e-zloc (j/replace cur-zloc (j/node v-zloc)))
-  #
+  # generate new source string
   (j/gen (j/root e-zloc)))
 
 (comment
