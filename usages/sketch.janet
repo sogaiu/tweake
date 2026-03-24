@@ -1,5 +1,5 @@
+(import ../src/get :as g)
 (import ../src/jipper :as j)
-(import ../src/main :as m)
 
 (comment
 
@@ -106,11 +106,11 @@
 
   (def new-ds (parse new-src))
 
-  (m/get-via-path new-ds [:vendored 2 :tag])
+  (g/get-via-path new-ds [:vendored 2 :tag])
   # =>
   ["9c2832d803b39f27ffd12d1a5fc82f3b83c64b4b" @[:vendored 2 :tag]]
 
-  (m/get-via-path new-ds [:vendored
+  (g/get-via-path new-ds [:vendored
                           |(= (get $ :name) "niche")
                           :tag])
   # =>
@@ -149,7 +149,7 @@
 
   # phase 1: ensure path makes sense for ds and obtain new path
 
-  (def [value new-path] (m/get-via-path ds path))
+  (def [value new-path] (g/get-via-path ds path))
   # =>
   ["7caf81f636bb97104aada6544219733b3c86badf" @[:vendored 2 :tag]]
 
@@ -238,7 +238,7 @@
   [:string @{:bc 9 :bl 15 :bp 484 :ec 51 :el 15 :ep 526} 
    `"7caf81f636bb97104aada6544219733b3c86badf"`]
 
-  # can verify value against returned info from `m/get-via-path`
+  # can verify value against returned info from `g/get-via-path`
   value
   # =>
   "7caf81f636bb97104aada6544219733b3c86badf"
@@ -306,7 +306,7 @@
 
   # phase 1: ensure path makes sense for ds and obtain new path
 
-  (def [value new-path] (m/get-via-path ds path))
+  (def [value new-path] (g/get-via-path ds path))
   # =>
   ["7caf81f636bb97104aada6544219733b3c86badf" @[:vendored 2 :tag]]
 
@@ -323,7 +323,7 @@
   # =>
   :vendored
 
-  (set cur-zloc (m/get-via cur-zloc step))
+  (set cur-zloc (g/get-via cur-zloc step))
   (set cur-node (j/node cur-zloc))
 
   (get cur-node 0)
@@ -335,7 +335,7 @@
   # =>
   2
 
-  (set cur-zloc (m/get-via cur-zloc step))
+  (set cur-zloc (g/get-via cur-zloc step))
   (set cur-node (j/node cur-zloc))
 
   (get cur-node 0)
@@ -347,7 +347,7 @@
   # =>
   :tag
 
-  (set cur-zloc (m/get-via cur-zloc step))
+  (set cur-zloc (g/get-via cur-zloc step))
   (set cur-node (j/node cur-zloc))
 
   (get cur-node 0)
@@ -359,7 +359,7 @@
   [:string @{:bc 9 :bl 15 :bp 484 :ec 51 :el 15 :ep 526}
    `"7caf81f636bb97104aada6544219733b3c86badf"`]
 
-  # can verify value against returned info from `m/get-via-path`
+  # can verify value against returned info from `g/get-via-path`
   value
   # =>
   "7caf81f636bb97104aada6544219733b3c86badf"

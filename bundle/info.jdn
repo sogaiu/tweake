@@ -17,7 +17,7 @@
    :paths [["jipper.janet" "src/"]]}
   {:name "niche"
    :url "https://github.com/sogaiu/niche"
-   :tag "7caf81f636bb97104aada6544219733b3c86badf"
+   :tag "9c2832d803b39f27ffd12d1a5fc82f3b83c64b4b"
    :paths [["niche.janet" "bin/"]]}
   {:name "spork"
    :url "https://github.com/janet-lang/spork"
