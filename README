@@ -1,0 +1,39 @@
+Usage: tweake <file> <path> <value>
+
+       tweake [-h|--help]|[-v|--version]
+
+Modify and display `.jdn` content [1].
+
+Parameters:
+
+  <file>                 path to `.jdn` file
+  <path>                 describes "path" to target to replace
+  <value>                value to replace with
+
+Options:
+
+  -h, --help             show this output
+  -v, --version          show version information
+
+Examples:
+
+  Show content based on `.niche.jdn` which excludes a file:
+
+  $ tweake .niche.jdn ':excludes' '["src/args.janet"]'
+
+  Show content based on `bundle/info.jdn` with new name:
+
+  $ tweake bundle/info.jdn ':name' '"cooler-name"'
+
+  Show content based on `bundle/info.jdn` with new tag for a
+  vendored dependency:
+
+  $ tweake bundle/info.jdn \
+           ':vendored |(= (get $ :name) "niche") :tag' \
+           '"shiny-new-tag"'
+
+---
+
+[1] It's only the content which is modified and displayed, i.e.
+    files are not modified in-place,
+
