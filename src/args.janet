@@ -54,11 +54,19 @@
   #
   #        (short-fn (= (get $ :name) "niche"))
   #
-  # XXX: only the first item in the path should be allowed to be
-  #      a symbol, and if it is, it needs to start with @
-  (assertf (all |(or (keyword? $) (nat? $) (tuple? $) (symbol? $))
-                path)
-           "only keywords, natural numbers, tuples, symbols: %n" path)
+  (let [first-step (first path)]
+    (if (symbol? first-step)
+      (assertf (string/has-prefix? "@" first-step)
+               "leading symbol item must start with @: %n" first-step)
+      (assertf (or (keyword? first-step)
+                   (nat? first-step)
+                   (tuple? first-step))
+               "unexpected type for first step in path: %n" first-step)))
+  #
+  (assertf (all |(or (keyword? $) (nat? $) (tuple? $))
+                (slice path 1))
+           "only keywords, natural numbers, tuples allowed: %n"
+           (slice path 1))
   #
   (when (not= "nil" value-str)
     (assertf (parse value-str) "could not parse: %n" value-str))
@@ -73,6 +81,7 @@
         (let [scanned (scan-number (slice first-step 1))]
           (if (number? scanned)
             scanned
+            # XXX: haven't settled on whether a keyword is better here
             nil))
         0)))
   #
