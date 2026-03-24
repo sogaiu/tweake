@@ -65,7 +65,7 @@
 ########################################################################
 
 (defn tweak
-  [src path new-value-str]
+  [src path value-str]
   # check source string
   (def [ok? data] (protect (parse-all src)))
   (when (not ok?)
@@ -105,7 +105,7 @@
   (assertf (deep= value (parse found-value-str))
            "expected: %n, but found: %n" value (parse found-value-str))
   #
-  (def v-zloc (-> new-value-str j/par j/zip-down))
+  (def v-zloc (-> value-str j/par j/zip-down))
   # replace
   (def e-zloc (j/replace cur-zloc (j/node v-zloc)))
   # generate new source string
@@ -192,7 +192,7 @@
   #
   (def input (get opts :input))
   (def path (get opts :path))
-  (def new-value-str (get opts :value-str))
+  (def value-str (get opts :value-str))
   #
   (def [ok? src] (protect (if (= input stdin)
                             (file/read input :all)
@@ -200,7 +200,7 @@
   (when (not ok?)
     (errorf "failed to read in: %s" input))
   #
-  (def new-src (tweak src path new-value-str))
+  (def new-src (tweak src path value-str))
   #
   (print new-src))
 
