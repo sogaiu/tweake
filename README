@@ -1,4 +1,5 @@
 Usage: tweake <file> <path> <value>
+       tweake - <path> <value>
 
        tweake [-h|--help]|[-v|--version]
 
@@ -9,6 +10,7 @@ Parameters:
   <file>                 path to `.jdn` file
   <path>                 describes "path" to target to replace
   <value>                value to replace with
+  -                      read JDN content from standard input
 
 Options:
 
@@ -16,6 +18,12 @@ Options:
   -v, --version          show version information
 
 Examples:
+
+  Show content based on standard input with :name's value
+  changed:
+
+  $ echo '{:name "hello"}' | \
+    tweake - ':name' '"annyeong"'
 
   Show content based on `.niche.jdn` which excludes a file:
 

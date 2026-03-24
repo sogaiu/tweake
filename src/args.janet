@@ -28,8 +28,14 @@
         (assertf new-head "expected a command but found none: %n" args)
         [opts new-head])))
   #
-  (assertf (= :file (os/stat file-path :mode))
-           "not a file path: %s" file-path)
+  (def input
+    (if (= "-" file-path)
+      stdin
+      (do
+        (assertf (= :file (os/stat file-path :mode))
+                 "not a file path: %s" file-path)
+        #
+        (os/realpath file-path))))
   # XXX: improve feedback message?
   (assertf (<= 2 (length the-args))
            "need at least two more arguments: %n" the-args)
@@ -56,7 +62,7 @@
   (array/remove the-args 0)
   #
   (merge opts
-         {:file-path file-path
+         {:input input
           # XXX: is this `eval` use likely to be a problem?
           :path (eval path)
           :value-str value-str

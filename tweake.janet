@@ -31,8 +31,14 @@
         (assertf new-head "expected a command but found none: %n" args)
         [opts new-head])))
   #
-  (assertf (= :file (os/stat file-path :mode))
-           "not a file path: %s" file-path)
+  (def input
+    (if (= "-" file-path)
+      stdin
+      (do
+        (assertf (= :file (os/stat file-path :mode))
+                 "not a file path: %s" file-path)
+        #
+        (os/realpath file-path))))
   # XXX: improve feedback message?
   (assertf (<= 2 (length the-args))
            "need at least two more arguments: %n" the-args)
@@ -59,7 +65,7 @@
   (array/remove the-args 0)
   #
   (merge opts
-         {:file-path file-path
+         {:input input
           # XXX: is this `eval` use likely to be a problem?
           :path (eval path)
           :value-str value-str
@@ -2372,11 +2378,12 @@
 
 
 
-(def version "2026-03-24_00-50-26")
+(def version "2026-03-24_02-04-21")
 
 (def usage
   `````
   Usage: tweake <file> <path> <value>
+         tweake - <path> <value>
 
          tweake [-h|--help]|[-v|--version]
 
@@ -2387,6 +2394,7 @@
     <file>                 path to `.jdn` file
     <path>                 describes "path" to target to replace
     <value>                value to replace with
+    -                      read JDN content from standard input
 
   Options:
 
@@ -2394,6 +2402,12 @@
     -v, --version          show version information
 
   Examples:
+
+    Show content based on standard input with :name's value
+    changed:
+
+    $ echo '{:name "hello"}' | \
+      tweake - ':name' '"annyeong"'
 
     Show content based on `.niche.jdn` which excludes a file:
 
@@ -2751,10 +2765,12 @@
     (print version)
     (os/exit 0))
   #
-  (def file-path (get opts :file-path))
-  (def [ok? src] (protect (slurp file-path)))
+  (def input (get opts :input))
+  (def [ok? src] (protect (if (= input stdin)
+                            (file/read input :all)
+                            (slurp input))))
   (when (not ok?)
-    (errorf "failed to read in: %s" file-path))
+    (errorf "failed to read in: %s" input))
   #
   (def data (parse-all src))
   (when (<= 2 (length data))

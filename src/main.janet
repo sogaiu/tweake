@@ -6,6 +6,7 @@
 (def usage
   `````
   Usage: tweake <file> <path> <value>
+         tweake - <path> <value>
 
          tweake [-h|--help]|[-v|--version]
 
@@ -16,6 +17,7 @@
     <file>                 path to `.jdn` file
     <path>                 describes "path" to target to replace
     <value>                value to replace with
+    -                      read JDN content from standard input
 
   Options:
 
@@ -23,6 +25,12 @@
     -v, --version          show version information
 
   Examples:
+
+    Show content based on standard input with :name's value
+    changed:
+
+    $ echo '{:name "hello"}' | \
+      tweake - ':name' '"annyeong"'
 
     Show content based on `.niche.jdn` which excludes a file:
 
@@ -380,10 +388,12 @@
     (print version)
     (os/exit 0))
   #
-  (def file-path (get opts :file-path))
-  (def [ok? src] (protect (slurp file-path)))
+  (def input (get opts :input))
+  (def [ok? src] (protect (if (= input stdin)
+                            (file/read input :all)
+                            (slurp input))))
   (when (not ok?)
-    (errorf "failed to read in: %s" file-path))
+    (errorf "failed to read in: %s" input))
   #
   (def data (parse-all src))
   (when (<= 2 (length data))
