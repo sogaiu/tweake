@@ -2707,7 +2707,7 @@
 (comment import ./jipper :prefix "")
 
 
-(def version "2026-03-24_04-10-48")
+(def version "2026-03-24_04-16-54")
 
 (def usage
   `````
@@ -2716,7 +2716,7 @@
 
          tweake [-h|--help]|[-v|--version]
 
-  Slightly modify and display JDN content [1].
+  Slightly modify [1] and display JDN content [2].
 
   Parameters:
 
@@ -2759,8 +2759,11 @@
 
   ---
 
-  [1] It's only the content which is modified and displayed, i.e.
-      files are not modified in-place,
+  [1] A fair bit of the formatting as well as comments are
+      preserved.
+
+  [2] It's only the content which is modified and displayed,
+      i.e. files are not modified in-place.
 
   `````)
 
