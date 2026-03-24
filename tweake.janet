@@ -2707,7 +2707,7 @@
 (comment import ./jipper :prefix "")
 
 
-(def version "2026-03-24_04-55-02")
+(def version "2026-03-24_05-01-19")
 
 (def usage
   `````
@@ -2807,7 +2807,7 @@
   #
   # prepare replacement
   (def found-value-str (j/gen (j/node cur-zloc)))
-  (assertf (= value (parse found-value-str))
+  (assertf (deep= value (parse found-value-str))
            "expected: %n, but found: %n" value (parse found-value-str))
   #
   (def v-zloc (-> new-value-str j/par j/zip-down))
@@ -2869,6 +2869,16 @@
   (declare-source
     :prefix "janet-pegs"
     :source @["lib"])
+  ``
+
+  (tweak project-janet-src [1] `nil`)
+  # =>
+  ``
+  (declare-project
+     :name "janet-peg"
+     :url "https://github.com/sogaiu/janet-peg")
+
+  nil
   ``
 
   )
