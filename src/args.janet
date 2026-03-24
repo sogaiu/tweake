@@ -43,7 +43,7 @@
   (def [path-str value-str] the-args)
   (assertf (parse-all path-str) "could not parse: %n" path-str)
   #
-  (def path (parse-all path-str))
+  (var path (parse-all path-str))
   # XXX: using `tuple?` below, but the expected input is a tuple
   #      that represents a short-fn.  things of the form |(...)
   #      can be used, e.g.
@@ -79,6 +79,7 @@
       (if (and (symbol? first-step)
                (string/has-prefix? "@" (slice first-step 0 1)))
         (let [scanned (scan-number (slice first-step 1))]
+          (set path [;(slice path 1)])
           (if (number? scanned)
             scanned
             # XXX: haven't settled on whether a keyword is better here
@@ -89,7 +90,7 @@
          {:input input
           :top-level-index top-level-index
           # XXX: is this `eval` use likely to be a problem?
-          :path (eval (tuple/brackets ;(slice path 1)))
+          :path (eval path)
           :value-str value-str
           :rest the-args}))
 

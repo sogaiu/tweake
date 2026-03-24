@@ -46,7 +46,7 @@
   (def [path-str value-str] the-args)
   (assertf (parse-all path-str) "could not parse: %n" path-str)
   #
-  (def path (parse-all path-str))
+  (var path (parse-all path-str))
   # XXX: using `tuple?` below, but the expected input is a tuple
   #      that represents a short-fn.  things of the form |(...)
   #      can be used, e.g.
@@ -82,6 +82,7 @@
       (if (and (symbol? first-step)
                (string/has-prefix? "@" (slice first-step 0 1)))
         (let [scanned (scan-number (slice first-step 1))]
+          (set path [;(slice path 1)])
           (if (number? scanned)
             scanned
             # XXX: haven't settled on whether a keyword is better here
@@ -92,7 +93,7 @@
          {:input input
           :top-level-index top-level-index
           # XXX: is this `eval` use likely to be a problem?
-          :path (eval (tuple/brackets ;(slice path 1)))
+          :path (eval path)
           :value-str value-str
           :rest the-args}))
 
@@ -2798,7 +2799,7 @@
 
 
 
-(def version "2026-03-24_12-13-20")
+(def version "2026-03-24_23-51-38")
 
 (def usage
   `````
@@ -2959,10 +2960,10 @@
     (print version)
     (os/exit 0))
   #
-  (def input (get opts :input))
-  (def top-level-index (get opts :top-level-index))
-  (def path (get opts :path))
-  (def value-str (get opts :value-str))
+  (def {:input input
+        :path path
+        :top-level-index top-level-index
+        :value-str value-str} opts)
   #
   (def [ok? src] (protect (if (= input stdin)
                             (file/read input :all)

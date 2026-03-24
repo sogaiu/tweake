@@ -162,10 +162,10 @@
     (print version)
     (os/exit 0))
   #
-  (def input (get opts :input))
-  (def top-level-index (get opts :top-level-index))
-  (def path (get opts :path))
-  (def value-str (get opts :value-str))
+  (def {:input input
+        :path path
+        :top-level-index top-level-index
+        :value-str value-str} opts)
   #
   (def [ok? src] (protect (if (= input stdin)
                             (file/read input :all)
