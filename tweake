@@ -2707,7 +2707,7 @@
 (comment import ./jipper :prefix "")
 
 
-(def version "2026-03-24_04-02-09")
+(def version "2026-03-24_04-08-01")
 
 (def usage
   `````
@@ -2741,6 +2741,10 @@
     Show content based on `.niche.jdn` which excludes a file:
 
     $ tweake .niche.jdn ':excludes' '["src/args.janet"]'
+
+    Show content based on `.niche.jand` which changes target:
+
+    $ tweake .niche.jdn ':includes 1' '"tweake"'
 
     Show content based on `bundle/info.jdn` with new name:
 

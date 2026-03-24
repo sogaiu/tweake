@@ -37,6 +37,10 @@
 
     $ tweake .niche.jdn ':excludes' '["src/args.janet"]'
 
+    Show content based on `.niche.jand` which changes target:
+
+    $ tweake .niche.jdn ':includes 1' '"tweake"'
+
     Show content based on `bundle/info.jdn` with new name:
 
     $ tweake bundle/info.jdn ':name' '"cooler-name"'
