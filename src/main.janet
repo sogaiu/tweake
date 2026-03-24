@@ -143,6 +143,29 @@
     :value 11}]
   ``
 
+  (def project-janet-src
+    ``
+    (declare-project
+       :name "janet-peg"
+       :url "https://github.com/sogaiu/janet-peg")
+
+    (declare-source
+      :prefix "janet-peg"
+      :source @["lib"])
+    ``)
+
+  (tweak project-janet-src [1 2] `"janet-pegs"`)
+  # =>
+  ``
+  (declare-project
+     :name "janet-peg"
+     :url "https://github.com/sogaiu/janet-peg")
+
+  (declare-source
+    :prefix "janet-pegs"
+    :source @["lib"])
+  ``
+
   )
 
 (defn main
