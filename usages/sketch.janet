@@ -1,4 +1,5 @@
 (import ../src/get :as g)
+(import ../src/jget :as jg)
 (import ../src/jipper :as j)
 
 (comment
@@ -323,7 +324,7 @@
   # =>
   :vendored
 
-  (set cur-zloc (g/get-via cur-zloc step))
+  (set cur-zloc (jg/get-via cur-zloc step))
   (set cur-node (j/node cur-zloc))
 
   (get cur-node 0)
@@ -335,7 +336,7 @@
   # =>
   2
 
-  (set cur-zloc (g/get-via cur-zloc step))
+  (set cur-zloc (jg/get-via cur-zloc step))
   (set cur-node (j/node cur-zloc))
 
   (get cur-node 0)
@@ -347,7 +348,7 @@
   # =>
   :tag
 
-  (set cur-zloc (g/get-via cur-zloc step))
+  (set cur-zloc (jg/get-via cur-zloc step))
   (set cur-node (j/node cur-zloc))
 
   (get cur-node 0)

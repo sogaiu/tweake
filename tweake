@@ -98,8 +98,8 @@
           :rest the-args}))
 
 
-(comment import ./traverse :prefix "")
-(comment import ./get :prefix "")
+(comment import ./jtraverse :prefix "")
+(comment import ./jget :prefix "")
 (comment import ./jipper :prefix "")
 (comment import ./helpers :prefix "")
 # based on code by corasaurus-hex
@@ -2406,6 +2406,229 @@
 
 
 
+# XXX: not sure if should check whether node for zloc is:
+#
+#      :table, :struct
+(defn jg/get-via-key
+  ``
+  Move to the location of `key`'s associated value in the Janet
+  dictionary associated with `zloc`.  Currently, `key` can be a Janet
+  keyword (e.g. `:ant`) or a Janet natural number (e.g. `0` or `2`).
+
+  If no such key exists, return nil.  Otherwise return the determined
+  location.
+  ``
+
+  [zloc key]
+  (assertf (or (keyword? key) (nat? key))
+           "expected keyword or natural number, found: %n" key)
+  #
+  (def first-key-zloc (j/down-skip-wsc zloc))
+  (when first-key-zloc
+    (def key-str (string (if (keyword? key) ":" "") key))
+    (var cur-zloc first-key-zloc)
+    (while (def cur-node (j/node cur-zloc))
+      (when (match cur-node
+              [:keyword _ (@ key-str)]
+              true
+              #
+              [:number _ (@ key-str)]
+              true
+              #
+              false)
+        (break))
+      (set cur-zloc (-> cur-zloc
+                        j/right-skip-wsc
+                        j/right-skip-wsc)))
+    #
+    (when cur-zloc
+      (def value-zloc (j/right-skip-wsc cur-zloc))
+      (assertf value-zloc "failed to find value for key: %n" key)
+      #
+      value-zloc)))
+
+(comment
+
+  (-> (j/par "{:a 1}")
+      j/zip-down
+      (jg/get-via-key :a)
+      j/node)
+  # =>
+  [:number @{:bc 5 :bl 1 :bp 4 :ec 6 :el 1 :ep 5} "1"]
+
+  (-> (j/par `{-1 "minus-one" 0 "zero"}`)
+      j/zip-down
+      (jg/get-via-key 0)
+      j/node)
+  # =>
+  [:string @{:bc 19 :bl 1 :bp 18 :ec 25 :el 1 :ep 24} `"zero"`]
+
+  (-> (j/par "{}")
+      j/zip-down
+      (jg/get-via-key :a)
+      j/node)
+  # =>
+  nil
+
+  (-> (j/par "{:a 1 :b 2}")
+      j/zip-down
+      (jg/get-via-key :c)
+      j/node)
+  # =>
+  nil
+
+  (-> (j/par (string "{# hi there\n"
+                     " :ant 1\n"
+                     " :bee 2}"))
+      j/zip-down
+      (jg/get-via-key :bee)
+      j/node)
+  # =>
+  [:number @{:bc 7 :bl 3 :bp 26 :ec 8 :el 3 :ep 27} "2"]
+
+  )
+
+# XXX: not sure if should check whether node for zloc is:
+#
+#      :array, :bracket-array, :tuple, :bracket-tuple
+(defn jg/get-via-index
+  ``
+  Move to the location corresponding to `index` in the Janet indexed
+  data structure associated with `zloc`.  `index` should be a
+  Janet natural number (e.g. `0` or `11`).
+
+  If no such index exists, return nil.  Otherwise return the
+  determined location.
+  ``
+  [zloc index]
+  (assertf (nat? index) "expected natural number, found: %n" index)
+  #
+  (def first-index-zloc (j/down-skip-wsc zloc))
+  (when first-index-zloc
+    (var cur-zloc first-index-zloc)
+    (repeat index
+      (set cur-zloc (j/right-skip-wsc cur-zloc)))
+    #
+    cur-zloc))
+
+(comment
+
+  (-> (j/par "[:x :y]")
+      j/zip-down
+      (jg/get-via-index 1)
+      j/node)
+  # =>
+  [:keyword @{:bc 5 :bl 1 :bp 4 :ec 7 :el 1 :ep 6} ":y"]
+
+  (-> (j/par "[]")
+      j/zip-down
+      (jg/get-via-index 1)
+      j/node)
+  # =>
+  nil
+
+  (-> (j/par "[:ant]")
+      j/zip-down
+      (jg/get-via-index 1)
+      j/node)
+  # =>
+  nil
+
+  (-> (j/par (string "[# hi there\n"
+                     " :ant :bee :cat]"))
+      j/zip-down
+      (jg/get-via-index 2)
+      j/node)
+  # =>
+  [:keyword @{:bc 12 :bl 2 :bp 23 :ec 16 :el 2 :ep 27} ":cat"]
+
+  )
+
+(defn jg/get-via
+  ``
+  Dispatch to `get-via-key` if `zloc` represents a dictionary, or to
+  `get-via-index` if it represents an indexed data structure.
+
+  Otherwise, error.
+  ``
+  [zloc id]
+  (def the-type (get (j/node zloc) 0))
+  (case the-type
+    :struct (jg/get-via-key zloc id)
+    :table (jg/get-via-key zloc id)
+    :array (jg/get-via-index zloc id)
+    :bracket-array (jg/get-via-index zloc id)
+    :tuple (jg/get-via-index zloc id)
+    :bracket-tuple (jg/get-via-index zloc id)
+    (errorf "unexpected type: %n" the-type)))
+
+(comment
+
+  (-> (j/par (string "{# hi there\n"
+                     " :ant 1\n"
+                     " :bee 2}"))
+      j/zip-down
+      (jg/get-via :bee)
+      j/node)
+  # =>
+  [:number @{:bc 7 :bl 3 :bp 26 :ec 8 :el 3 :ep 27} "2"]
+
+  (-> (j/par `{-1 "minus-one" 0 "zero"}`)
+      j/zip-down
+      (jg/get-via 0)
+      j/node)
+  # =>
+  [:string @{:bc 19 :bl 1 :bp 18 :ec 25 :el 1 :ep 24} `"zero"`]
+
+  (-> (j/par "{}")
+      j/zip-down
+      (jg/get-via :a)
+      j/node)
+  # =>
+  nil
+
+  (-> (j/par (string "[# hi there\n"
+                     " :ant :bee :cat]"))
+      j/zip-down
+      (jg/get-via 2)
+      j/node)
+  # =>
+  [:keyword @{:bc 12 :bl 2 :bp 23 :ec 16 :el 2 :ep 27} ":cat"]
+
+  )
+
+
+(comment import ./jipper :prefix "")
+
+
+(defn jt/traverse-src
+  [src skip path value value-str]
+  # prepare zipper for zipper traversal
+  (def zloc (-> src j/par j/zip-down))
+  (var cur-zloc zloc)
+  # if needed, skip to appropriate top-level item
+  (repeat skip
+    (set cur-zloc (j/right-skip-wsc cur-zloc)))
+  # traverse the path, one step at a time
+  (each step path
+    (set cur-zloc (jg/get-via cur-zloc step)))
+  (when (nil? cur-zloc)
+    (errorf "unexpected nil value for current location"))
+  #
+  # prepare replacement
+  (def found-value-str (j/gen (j/node cur-zloc)))
+  (assertf (deep= value (parse found-value-str))
+           "expected: %n, but found: %n" value (parse found-value-str))
+  #
+  (def v-zloc (-> value-str j/par j/zip-down))
+  # replace
+  (def e-zloc (j/replace cur-zloc (j/node v-zloc)))
+  # generate new source string
+  (j/gen (j/root e-zloc)))
+
+
+(comment import ./traverse :prefix "")
+(comment import ./get :prefix "")
 (comment
 
   (def path-str ":vendored 2 :tag")
@@ -2536,201 +2759,6 @@
 
   )
 
-########################################################################
-
-# XXX: not sure if should check whether node for zloc is:
-#
-#      :table, :struct
-(defn g/get-via-key
-  ``
-  Move to the location of `key`'s associated value in the Janet
-  dictionary associated with `zloc`.  Currently, `key` can be a Janet
-  keyword (e.g. `:ant`) or a Janet natural number (e.g. `0` or `2`).
-
-  If no such key exists, return nil.  Otherwise return the determined
-  location.
-  ``
-
-  [zloc key]
-  (assertf (or (keyword? key) (nat? key))
-           "expected keyword or natural number, found: %n" key)
-  #
-  (def first-key-zloc (j/down-skip-wsc zloc))
-  (when first-key-zloc
-    (def key-str (string (if (keyword? key) ":" "") key))
-    (var cur-zloc first-key-zloc)
-    (while (def cur-node (j/node cur-zloc))
-      (when (match cur-node
-              [:keyword _ (@ key-str)]
-              true
-              #
-              [:number _ (@ key-str)]
-              true
-              #
-              false)
-        (break))
-      (set cur-zloc (-> cur-zloc
-                        j/right-skip-wsc
-                        j/right-skip-wsc)))
-    #
-    (when cur-zloc
-      (def value-zloc (j/right-skip-wsc cur-zloc))
-      (assertf value-zloc "failed to find value for key: %n" key)
-      #
-      value-zloc)))
-
-(comment
-
-  (-> (j/par "{:a 1}")
-      j/zip-down
-      (g/get-via-key :a)
-      j/node)
-  # =>
-  [:number @{:bc 5 :bl 1 :bp 4 :ec 6 :el 1 :ep 5} "1"]
-
-  (-> (j/par `{-1 "minus-one" 0 "zero"}`)
-      j/zip-down
-      (g/get-via-key 0)
-      j/node)
-  # =>
-  [:string @{:bc 19 :bl 1 :bp 18 :ec 25 :el 1 :ep 24} `"zero"`]
-
-  (-> (j/par "{}")
-      j/zip-down
-      (g/get-via-key :a)
-      j/node)
-  # =>
-  nil
-
-  (-> (j/par "{:a 1 :b 2}")
-      j/zip-down
-      (g/get-via-key :c)
-      j/node)
-  # =>
-  nil
-
-  (-> (j/par (string "{# hi there\n"
-                     " :ant 1\n"
-                     " :bee 2}"))
-      j/zip-down
-      (g/get-via-key :bee)
-      j/node)
-  # =>
-  [:number @{:bc 7 :bl 3 :bp 26 :ec 8 :el 3 :ep 27} "2"]
-
-  )
-
-# XXX: not sure if should check whether node for zloc is:
-#
-#      :array, :bracket-array, :tuple, :bracket-tuple
-(defn g/get-via-index
-  ``
-  Move to the location corresponding to `index` in the Janet indexed
-  data structure associated with `zloc`.  `index` should be a
-  Janet natural number (e.g. `0` or `11`).
-
-  If no such index exists, return nil.  Otherwise return the
-  determined location.
-  ``
-  [zloc index]
-  (assertf (nat? index) "expected natural number, found: %n" index)
-  #
-  (def first-index-zloc (j/down-skip-wsc zloc))
-  (when first-index-zloc
-    (var cur-zloc first-index-zloc)
-    (repeat index
-      (set cur-zloc (j/right-skip-wsc cur-zloc)))
-    #
-    cur-zloc))
-
-(comment
-
-  (-> (j/par "[:x :y]")
-      j/zip-down
-      (g/get-via-index 1)
-      j/node)
-  # =>
-  [:keyword @{:bc 5 :bl 1 :bp 4 :ec 7 :el 1 :ep 6} ":y"]
-
-  (-> (j/par "[]")
-      j/zip-down
-      (g/get-via-index 1)
-      j/node)
-  # =>
-  nil
-
-  (-> (j/par "[:ant]")
-      j/zip-down
-      (g/get-via-index 1)
-      j/node)
-  # =>
-  nil
-
-  (-> (j/par (string "[# hi there\n"
-                     " :ant :bee :cat]"))
-      j/zip-down
-      (g/get-via-index 2)
-      j/node)
-  # =>
-  [:keyword @{:bc 12 :bl 2 :bp 23 :ec 16 :el 2 :ep 27} ":cat"]
-
-  )
-
-(defn g/get-via
-  ``
-  Dispatch to `get-via-key` if `zloc` represents a dictionary, or to
-  `get-via-index` if it represents an indexed data structure.
-
-  Otherwise, error.
-  ``
-  [zloc id]
-  (def the-type (get (j/node zloc) 0))
-  (case the-type
-    :struct (g/get-via-key zloc id)
-    :table (g/get-via-key zloc id)
-    :array (g/get-via-index zloc id)
-    :bracket-array (g/get-via-index zloc id)
-    :tuple (g/get-via-index zloc id)
-    :bracket-tuple (g/get-via-index zloc id)
-    (errorf "unexpected type: %n" the-type)))
-
-(comment
-
-  (-> (j/par (string "{# hi there\n"
-                     " :ant 1\n"
-                     " :bee 2}"))
-      j/zip-down
-      (g/get-via :bee)
-      j/node)
-  # =>
-  [:number @{:bc 7 :bl 3 :bp 26 :ec 8 :el 3 :ep 27} "2"]
-
-  (-> (j/par `{-1 "minus-one" 0 "zero"}`)
-      j/zip-down
-      (g/get-via 0)
-      j/node)
-  # =>
-  [:string @{:bc 19 :bl 1 :bp 18 :ec 25 :el 1 :ep 24} `"zero"`]
-
-  (-> (j/par "{}")
-      j/zip-down
-      (g/get-via :a)
-      j/node)
-  # =>
-  nil
-
-  (-> (j/par (string "[# hi there\n"
-                     " :ant :bee :cat]"))
-      j/zip-down
-      (g/get-via 2)
-      j/node)
-  # =>
-  [:keyword @{:bc 12 :bl 2 :bp 23 :ec 16 :el 2 :ep 27} ":cat"]
-
-  )
-
-
-(comment import ./jipper :prefix "")
 
 
 (defn t/scan-src
@@ -2772,34 +2800,9 @@
   # non-zipper traversal to learn various things
   [;(g/get-via-path top-level-item mod-path) tl-idx])
 
-(defn t/traverse-src
-  [src skip path value value-str]
-  # prepare zipper for zipper traversal
-  (def zloc (-> src j/par j/zip-down))
-  (var cur-zloc zloc)
-  # if needed, skip to appropriate top-level item
-  (repeat skip
-    (set cur-zloc (j/right-skip-wsc cur-zloc)))
-  # traverse the path, one step at a time
-  (each step path
-    (set cur-zloc (g/get-via cur-zloc step)))
-  (when (nil? cur-zloc)
-    (errorf "unexpected nil value for current location"))
-  #
-  # prepare replacement
-  (def found-value-str (j/gen (j/node cur-zloc)))
-  (assertf (deep= value (parse found-value-str))
-           "expected: %n, but found: %n" value (parse found-value-str))
-  #
-  (def v-zloc (-> value-str j/par j/zip-down))
-  # replace
-  (def e-zloc (j/replace cur-zloc (j/node v-zloc)))
-  # generate new source string
-  (j/gen (j/root e-zloc)))
 
 
-
-(def version "2026-03-25_03-33-16")
+(def version "2026-03-25_05-55-45")
 
 (def usage
   `````
@@ -2862,7 +2865,7 @@
   (def [found-value new-path skip]
     (t/scan-src src top-level-index path))
   #
-  (t/traverse-src src skip new-path found-value value-str))
+  (jt/traverse-src src skip new-path found-value value-str))
 
 (comment
 

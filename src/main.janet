@@ -1,4 +1,5 @@
 (import ./args :as a)
+(import ./jtraverse :as jt)
 (import ./traverse :as t)
 
 (def version "DEVEL")
@@ -64,7 +65,7 @@
   (def [found-value new-path skip]
     (t/scan-src src top-level-index path))
   #
-  (t/traverse-src src skip new-path found-value value-str))
+  (jt/traverse-src src skip new-path found-value value-str))
 
 (comment
 
