@@ -2799,7 +2799,7 @@
 
 
 
-(def version "2026-03-24_23-51-38")
+(def version "2026-03-25_01-27-03")
 
 (def usage
   `````
@@ -2824,23 +2824,19 @@
 
   Examples:
 
+    Show content based on `bundle/info.jdn` with new :name:
+
+    $ tweake bundle/info.jdn ':name' '"cooler-name"'
+
     Show content based on standard input with :name's value
     changed:
 
-    $ echo '{:name "hello"}' | \
-      tweake - ':name' '"annyeong"'
+    $ cat bundle/info.jdn | tweake - ':name' '"spot"'
 
-    Show content based on `.niche.jdn` which excludes a file:
-
-    $ tweake .niche.jdn ':excludes' '["src/args.janet"]'
-
-    Show content based on `.niche.jand` which changes target:
+    Show content based on `.niche.jdn` which changes included
+    paths
 
     $ tweake .niche.jdn ':includes 1' '"tweake"'
-
-    Show content based on `bundle/info.jdn` with new name:
-
-    $ tweake bundle/info.jdn ':name' '"cooler-name"'
 
     Show content based on `bundle/info.jdn` with new tag for a
     vendored dependency:
