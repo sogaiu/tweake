@@ -2799,7 +2799,7 @@
 
 
 
-(def version "2026-03-25_01-27-03")
+(def version "2026-03-25_03-33-16")
 
 (def usage
   `````
@@ -2834,9 +2834,9 @@
     $ cat bundle/info.jdn | tweake - ':name' '"spot"'
 
     Show content based on `.niche.jdn` which changes included
-    paths
+    paths:
 
-    $ tweake .niche.jdn ':includes 1' '"tweake"'
+    $ tweake .niche.jdn ':includes 0' '"tweake"'
 
     Show content based on `bundle/info.jdn` with new tag for a
     vendored dependency:
