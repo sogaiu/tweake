@@ -60,6 +60,8 @@
 
 ########################################################################
 
+(def peek t/scan-src)
+
 (defn tweak
   [src top-level-index path value-str]
   (def [found-value new-path skip]
