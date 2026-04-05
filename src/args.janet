@@ -1,3 +1,5 @@
+(import ./deval :as d)
+
 (defn parse-args
   [args]
   (def the-args (array ;args))
@@ -54,7 +56,7 @@
   #
   #        (short-fn (= (get $ :name) "niche"))
   #
-  (let [first-step (first path)]
+  (let [first-step (get path 0)]
     (if (symbol? first-step)
       (assertf (string/has-prefix? "@" first-step)
                "leading symbol item must start with @: %n" first-step)
@@ -86,11 +88,13 @@
             nil))
         0)))
   #
+  (assertf (d/safe? path) "path might have unsafe elements: %n" path)
+  (def checked-path (eval path))
+  #
   (merge opts
          {:input input
           :top-level-index top-level-index
-          # XXX: is this `eval` use likely to be a problem?
-          :path (eval path)
+          :path checked-path
           :value-str value-str
           :rest the-args}))
 
