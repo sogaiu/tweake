@@ -19,6 +19,10 @@
    :url "https://github.com/sogaiu/niche"
    :tag "9c2832d803b39f27ffd12d1a5fc82f3b83c64b4b"
    :paths [["niche.janet" "bin/"]]}
+  {:name "fencer"
+   :url "https://github.com/sogaiu/fencer"
+   :tag "9b914c186fbbe24e2675ec8a51c0e361ce21284a"
+   :paths [["fencer.janet" "src/"]]}
   {:name "spork"
    :url "https://github.com/janet-lang/spork"
    :tag "60110c3688c5687cc603159bcfa38d579f95a27d"

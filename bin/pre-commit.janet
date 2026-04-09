@@ -40,7 +40,7 @@
 
 # sourced from tweake -h output
 (def tests
-  [~[[./tweake bundle/info.jdn ":name" `"cooler-name"`]
+  [~[[./tweake .jell.jdn ":start-path" `"src/sub.janet"`]
      "data/0.jdn"]
    #
    ~[[./tweake .niche.jdn ":includes 0" `"tweake"`]
@@ -48,8 +48,8 @@
    #
    ~[[./tweake
       bundle/info.jdn
-      `:vendored |(= (get $ :name) "niche") :tag`
-      `"shiny-new-tag"`]
+      `:binscripts |(= (get $ :main) "tweake.janet")`
+      `{:main "sneak.janet" :is-janet true}`]
      "data/2.jdn"]])
 
 (var n-passed 0)

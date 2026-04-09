@@ -1,5 +1,3 @@
-# deval - defensive eval
-
 (def atoms
   (invert [:boolean
            :buffer
@@ -127,7 +125,7 @@
 
   )
 
-(def safe-syms
+(def limited-syms
   (invert 
     ~[% %= * *= + ++ += - -- -= -> ->> -?> -?>> / /= < <= = > >=
       accumulate accumulate2 all and any?
@@ -159,42 +157,42 @@
       walk when when-let while
       zero? zipcoll]))
 
-(defn safe-sym?
+(defn limited-sym?
   [sym]
-  (truthy? (or (get safe-syms sym)
+  (truthy? (or (get limited-syms sym)
                (string/has-prefix? "$" sym))))
 
 (comment
 
-  (safe-sym? 'all)
+  (limited-sym? 'all)
   # =>
   true
 
-  (safe-sym? 'os/cd)
+  (limited-sym? 'os/cd)
   # =>
   false
 
   )
 
-(defn safe?
+(defn limited?
   [form]
   (truthy?
     (cond
       (and (tuple? form) (= :parens (tuple/type form)))
       (let [head (get form 0)]
-        (and (safe-sym? head)
-             (all safe? (tuple/slice form 1))))
+        (and (limited-sym? head)
+             (all limited? (tuple/slice form 1))))
       #
       (indexed? form)
-      (all safe? form)
+      (all limited? form)
       #
       (dictionary? form)
       (all |(let [[k v] $]
-              (and (safe? k) (safe? v)))
+              (and (limited? k) (limited? v)))
            (pairs form))
       #
       (symbol? form)
-      (safe-sym? form)
+      (limited-sym? form)
       #
       (atom? form)
       true
@@ -203,79 +201,79 @@
 
 (comment
 
-  (safe? true)
+  (limited? true)
   # =>
   true
 
-  (safe? @"hello")
+  (limited? @"hello")
   # =>
   true
 
-  (safe? :smile!)
+  (limited? :smile!)
   # =>
   true
 
-  (safe? nil)
+  (limited? nil)
   # =>
   true
 
-  (safe? 3.1415926535)
+  (limited? 3.1415926535)
   # =>
   true
 
-  (safe? ``must have goofed up somewhere``)
+  (limited? ``must have goofed up somewhere``)
   # =>
   true
 
-  (safe? 'and)
+  (limited? 'and)
   # =>
   true
 
-  (safe? 'dolphin)
+  (limited? 'dolphin)
   # =>
   false
 
-  (safe? '[:head :end])
+  (limited? '[:head :end])
   # =>
   true
 
-  (safe? (map inc [0 1 2]))
+  (limited? (map inc [0 1 2]))
   # =>
   true
 
-  (safe? '(map inc [0 1 2]))
+  (limited? '(map inc [0 1 2]))
   # =>
   true
 
-  (safe? {:a 1})
+  (limited? {:a 1})
   # =>
   true
 
-  (safe? @{:x 0})
+  (limited? @{:x 0})
   # =>
   true
 
-  (safe? (fiber/new (fn [_] 1)))
+  (limited? (fiber/new (fn [_] 1)))
   # =>
   false
 
-  (safe? '(fiber/new (fn [_] 1)))
+  (limited? '(fiber/new (fn [_] 1)))
   # =>
   false
 
-  (safe? '|(+ $ 80))
+  (limited? '|(+ $ 80))
   # =>
   true
 
-  (safe? '|(os/cwd))
+  (limited? '|(os/cwd))
   # =>
   false
 
-  (safe? '(map pp [:a :b]))
+  (limited? '(map pp [:a :b]))
   # =>
   false
 
-  (safe? (peg/compile 1))
+  (limited? (peg/compile 1))
   # =>
   false
 
